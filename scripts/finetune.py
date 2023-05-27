@@ -226,6 +226,15 @@ def train(
             tokenizer,
         )
 
+    if prepare_ds_only:
+        logging.info("Finished preparing dataset. Exiting...")
+        return
+
+    try:
+        model.train()
+    except:
+        pass
+
     trainer = setup_trainer(cfg, train_dataset, eval_dataset, model, tokenizer)
 
     model.config.use_cache = False
@@ -267,7 +276,12 @@ def train(
             logging.info(
                 f"Using Auto-resume functionality to start with checkpoint at {resume_from_checkpoint}"
             )
-    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+
+    if cfg.flash_optimum:
+        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
+            trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+    else:
+        trainer.train(resume_from_checkpoint=resume_from_checkpoint)
 
     logging.info(f"Training Completed!!! Saving pre-trained model to {cfg.output_dir}")
 
