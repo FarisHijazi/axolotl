@@ -7,6 +7,8 @@ from typing import Optional, Tuple, TYPE_CHECKING
 import bitsandbytes as bnb
 import torch
 import transformers
+from optimum.bettertransformer import BetterTransformer
+from torch import nn
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -103,7 +105,7 @@ def load_model(
 
     if cfg.bf16:
         torch_dtype = torch.bfloat16
-    elif cfg.load_in_8bit or cfg.fp16:
+    elif cfg.load_in_8bit or cfg.fp16 or cfg.float16:
         torch_dtype = torch.float16
     else:
         torch_dtype = torch.float32
@@ -288,6 +290,9 @@ def load_model(
     if len(requires_grad) == 0:
         logging.warning("there are no parameters that require gradient updates")
     model.config.use_cache = False
+
+    if cfg.flash_optimum:
+        model = BetterTransformer.transform(model)
 
     # TODO resume_from_checkpoint handling
     return model, lora_config

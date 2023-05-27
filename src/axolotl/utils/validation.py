@@ -18,10 +18,17 @@ def validate_config(cfg):
 
     if not cfg.load_in_8bit and cfg.adapter == "lora":
         logging.warning("We recommend setting `load_in_8bit: true` for LORA finetuning")
-        
+
     if cfg.trust_remote_code:
         logging.warning("`trust_remote_code` is set to true. Please make sure that you reviewed the remote code/model.")
 
+    if cfg.flash_optimum is True:
+        if cfg.adapter:
+            logging.warning("BetterTransformers probably doesn't work with PEFT adapters")
+        if cfg.fp16 or cfg.bf16:
+            raise ValueError("AMP is not supported with BetterTransformer")
+        if cfg.float16 is not True:
+            logging.warning("You should probably set float16 to true")
     # TODO
     # MPT 7b
     # https://github.com/facebookresearch/bitsandbytes/issues/25
